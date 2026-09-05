@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SOWAL3ERRY - Integration Base</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           1. ตั้งค่าพื้นฐาน
+        ========================================= */
+        :root { --accent-color: #ffb800; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #1a1a1a; /* เปลี่ยนเป็นสีเข้มพื้นฐาน */
+        }
+
+        /* =========================================
+           2. Sidebar (แถบเมนูด้านซ้าย)
+        ========================================= */
+        .sidebar { 
+            position: fixed; top: 0; left: 0; height: 100vh; width: 70px; 
+            
+            /* 1. ใส่รูปพื้นหลังตรงนี้ (เปลี่ยนชื่อไฟล์เป็นของคุณ) */
+            background-image: url('endfield-terrain.png'); 
+            background-size: cover; /* บังคับรูปให้เต็มแถบ */
+            background-position: left center; /* จัดให้อยู่ชิดซ้าย รูปจะได้ไม่กระตุกตอนเมนูกาง */
+            background-repeat: no-repeat;
+            
+            /* 2. (ตัวเลือกเสริม) ใส่สีขาวโปร่งแสงทับรูป 80% เพื่อให้ตัวหนังสือเมนูยังอ่านง่าย */
+            background-color: rgba(255, 255, 255, 0.5);
+            background-blend-mode: overlay;
+
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05); 
+            overflow: hidden; z-index: 1000; display: flex; flex-direction: column; 
+            transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+        }
+        .sidebar:hover { width: 300px; }
+        .sidebar-logo { width: 300px; padding: 20px 0; margin-bottom: 20px; display: flex; align-items: center; }
+        .sidebar-logo img { width: 50px; margin-left: 10px; }
+        .sidebar-logo .logo-text { font-weight: 900; font-size: 1.2rem; margin-left: 15px; white-space: nowrap; }
+        
+        .nav-link { 
+            display: flex; align-items: center; width: 300px; height: 56px; 
+            color: #888; text-decoration: none; font-weight: 600; 
+            border-left: 5px solid transparent; transition: background-color 0.2s; 
+        }
+        .nav-link:hover { background-color: #f9f9f9; color: #333; }
+        .nav-link.active { background-color: #f0f0f0; color: #000; border-left: 5px solid #000; }
+        .nav-link .icon { min-width: 65px; text-align: center; font-size: 1.5rem; }
+        .nav-link .text { white-space: nowrap; margin-left: 5px; }
+        .sidebar-bottom { margin-top: auto; padding: 20px 0; width: 300px; }
+
+        /* =========================================
+           3. Social Bar (แถบโซเชียล)
+        ========================================= */
+        .social-container { 
+            margin-top: 15px; margin-left: 10px; height: 40px; width: 50px; 
+            background-color: #e6e6e6; border-radius: 6px; position: relative; 
+            transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+        }
+        .sidebar:hover .social-container { width: 260px; }
+        .social-collapsed { position: absolute; top: 0; left: 0; width: 50px; height: 100%; display: flex; justify-content: center; align-items: center; color: #666; transition: opacity 0.2s; }
+        .social-expanded { position: absolute; top: 0; left: 0; width: 260px; height: 100%; display: flex; justify-content: space-evenly; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .social-expanded a { color: #a0a0a0; text-decoration: none; font-size: 1.2rem; transition: color 0.2s; }
+        .social-expanded a:hover { color: #111; }
+        .sidebar:hover .social-collapsed { opacity: 0; pointer-events: none; }
+        .sidebar:hover .social-expanded { opacity: 1; pointer-events: auto; transition-delay: 0.1s; }
+
+        /* =========================================
+           4. การตั้งค่าเลย์เอาต์หลัก & หน้าเนื้อหา
+        ========================================= */
+        .main-content { 
+            margin-left: 70px; /* เปลี่ยนให้ชิดพอดีตอนเมนูหุบ */
+            padding: 0; 
+        }
+        
+        .content-section {
+            min-height: 100vh; 
+            display: flex; flex-direction: column; justify-content: center;
+            position: relative; overflow: hidden;
+            padding: 50px 80px; /* ย้าย Padding มาไว้ที่นี่แทน */
+        }
+
+        /* ธีมพื้นหลังสีขาวไล่เฉด (สำหรับหน้า 2, 3, 4) */
+        .bg-light-theme {
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            border-bottom: 1px solid #ccc;
+        }
+
+        /* =========================================
+           5. ของตกแต่ง Sci-Fi ในหน้า TOP
+        ========================================= */
+        #bg-video { 
+            position: absolute; top: 50%; left: 50%; 
+            min-width: 100%; min-height: 100%; width: auto; height: auto; 
+            z-index: -2; transform: translate(-50%, -50%); object-fit: cover; 
+        }
+        .video-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); /* กรองแสงวิดีโอให้มืดลงนิดนึง */
+            z-index: -1;
+        }
+        
+        .tech-font { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
+        .decal { position: absolute; color: #fff; font-size: 0.75rem; pointer-events: none; z-index: 10; opacity: 0.7; }
+        .decal-top-left { top: 20px; left: 20px; }
+        .decal-bottom-right { bottom: 20px; right: 20px; }
+        
+        .top-bar { width: 100%; height: 4px; background-color: var(--accent-color); position: fixed; top: 0; left: 0; z-index: 1001; }
+        
+    </style>
+</head>
+<body>
+
+    <!-- แถบด้านบน & เส้นสแกน -->
+    <div class="top-bar"></div>
+    <div class="scanline"></div>
+
+    <!-- =========================================
+         หน้าจอ Boot Screen & Loading UI
+    ========================================= -->
+    <div id="boot-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: #050505; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff;">
+        <div id="boot-content" style="display: flex; flex-direction: column; align-items: center;">
+            <h2 style="font-weight: 900; letter-spacing: 2px; margin-bottom: 30px; font-family: monospace;">SYS.OP // STANDBY</h2>
+            <button id="enter-btn" style="background: repeating-linear-gradient(-45deg, #111, #111 4px, #222 4px, #222 8px); color: white; border: 1px solid #444; padding: 15px 40px; font-weight: bold; font-size: 1.2rem; cursor: pointer; transition: transform 0.2s;">
+                [ SYSTEM START ]
+            </button>
+        </div>
+
+        <div id="loading-ui" style="display: none; flex-direction: column; align-items: center; width: 100%; position: relative;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: #fff; letter-spacing: 6px; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,184,0,0.8); z-index: 1; display: flex; align-items: center; gap: 15px;">
+                LOADING <span id="loading-text" style="font-size: 1.2rem; color: #ffb800;">0%</span>
+            </div>
+            <div style="width: 400px; max-width: 90%; height: 30px; border: 2px solid #ffb800; padding: 3px; box-shadow: 0 0 15px rgba(255,184,0,0.3), inset 0 0 10px rgba(255,184,0,0.2); position: relative; z-index: 1; background: rgba(0,0,0,0.5);">
+                <div id="progress-bar" style="width: 0%; height: 100%; background-color: #ffb800; box-shadow: 0 0 10px #ffb800;"></div>
+            </div>
+            <div class="mt-3" id="terminal-text" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fff; margin-bottom: 25px; width: 400px; max-width: 90%; text-align: left; line-height: 1.6; text-shadow: 0 0 5px rgba(255,255,255,0.4);">
+                <div id="line1" style="opacity: 0;"></div>
+                <div id="line2" style="opacity: 0;"></div>
+                <div id="line3" style="opacity: 0;"></div>
+                <div id="line4" style="opacity: 0;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- แผ่นสไลด์สีเหลือง -->
+    <div id="transition-screen" style="position: fixed; top: 0; left: -100%; width: 100%; height: 100vh; background-color: #ffb800; z-index: 10000; display: flex; justify-content: center; align-items: center; transition: left 1.25s cubic-bezier(0.76, 0, 0.24, 1);">
+        <h1 style="color: #000; font-weight: 900; font-size: 4rem; letter-spacing: 5px; font-style: italic;">ACCESS GRANTED</h1>
+    </div>
+
+    <!-- =========================================
+         แถบ Sidebar หลัก
+    ========================================= -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <div style="width: 40px; height: 40px; background: black; color: white; display:flex; justify-content:center; align-items:center; margin-left: 15px; font-weight: bold;">S3</div>
+            <div class="logo-text">SOWAL3ERRY</div>
+        </div>
+        
+        <a href="#top" class="nav-link menu-link active"><div class="icon"><i class="fa-regular fa-square-caret-up"></i></div><div class="text">TOP</div></a>        
+        <a href="#intro" class="nav-link menu-link"><div class="icon"><i class="fa-regular fa-clipboard"></i></div><div class="text">INTRODUCTION</div></a>
+        <a href="#works" class="nav-link menu-link"><div class="icon"><i class="fa-solid fa-pen-fancy"></i></div><div class="text">WORKS</div></a>
+        <a href="#activities" class="nav-link menu-link"><div class="icon"><i class="fa-solid fa-person-walking"></i></div><div class="text">ACTIVITIES</div></a>
+   
+        <div class="sidebar-bottom">
+            <audio id="bgm-player" loop preload="auto"><source src="bgm.mp3" type="audio/mpeg"></audio>
+            <a href="#" class="nav-link" id="sound-toggle-btn" style="margin-bottom: 15px;">
+                <div class="icon" id="sound-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg></div>
+                <div class="text" id="sound-text">音声：オフ (Sound: OFF)</div>
+            </a>
+            <div class="social-container">
+                <a href="#" class="social-collapsed"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>
+                <div class="social-expanded">
+                    <a href="https://x.com/HireTune4Xsora" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="https://www.pixiv.net/en/users/81221206" target="_blank"><i class="fa-brands fa-pixiv"></i></a>
+                    <a href="https://www.facebook.com/Sowal3erry/" target="_blank"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="https://ko-fi.com/soralinxz" target="_blank"><i class="fa-brands fa-ko-fi"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         เนื้อหาหน้าเว็บหลัก (แบ่ง 4 หน้าชัดเจน)
+    ========================================= -->
+    <div class="main-content">
+        
+        <!-- ส่วนที่ 1: TOP (มีวิดีโอพื้นหลัง) -->
+        <section id="top" class="content-section">
+            <!-- ย้าย Video และ Decals มาไว้เฉพาะในกรอบนี้ -->
+            <video loop muted playsinline id="bg-video">
+                <source src="Bgblender.mp4" type="video/mp4">
+            </video>
+            <!-- กรองแสงสีดำให้วิดีโอดรอปลง -->
+            <div class="video-overlay"></div> 
+            
+            <div class="decal tech-font decal-top-left">sys.op.log // v2.04<br>[REC] INITIALIZING...</div>
+            <div class="decal tech-font decal-bottom-right" style="text-align: right;">COORDS: 44.02 N, 10.99 E<br>STATUS: CLEAR</div>
+
+            <div style="position: relative; z-index: 1;">
+                <h1 style="color: white; font-family: 'JetBrains Mono', monospace; font-size: 4rem; font-weight: 900; letter-spacing: -2px;">WELCOME TO BASE</h1>
+                <p style="color: #ccc;">นี่คือโซน TOP: ลองคลิกเมนูด้านซ้าย หรือใช้ลูกกลิ้งเมาส์เลื่อนจอลงไปด้านล่างดูครับ</p>
+            </div>
+        </section>
+
+        <!-- ส่วนที่ 2: INTRODUCTION (พื้นหลังขาว) -->
+        <section id="intro" class="content-section bg-light-theme">
+            <div style="position: relative; z-index: 1;">
+                <h1 style="color: #111; font-family: 'JetBrains Mono', monospace; font-size: 4rem; font-weight: 900; letter-spacing: -2px;">INTRODUCTION</h1>
+                <p style="color: #666;">โซนแนะนำตัว: ตัวอักษรสีเข้มบนพื้นหลังสีขาว</p>
+            </div>
+        </section>
+
+        <!-- ส่วนที่ 3: WORKS (พื้นหลังขาว) -->
+        <section id="works" class="content-section bg-light-theme">
+            <div style="position: relative; z-index: 1;">
+                <h1 style="color: #111; font-family: 'JetBrains Mono', monospace; font-size: 4rem; font-weight: 900; letter-spacing: -2px;">WORKS</h1>
+                <p style="color: #666;">โซนผลงาน: ใส่โปรเจกต์ของคุณตรงนี้</p>
+            </div>
+        </section>
+
+        <!-- ส่วนที่ 4: ACTIVITIES (พื้นหลังขาว) -->
+        <section id="activities" class="content-section bg-light-theme">
+            <div style="position: relative; z-index: 1;">
+                <h1 style="color: #111; font-family: 'JetBrains Mono', monospace; font-size: 4rem; font-weight: 900; letter-spacing: -2px;">ACTIVITIES</h1>
+                <p style="color: #666;">โซนกิจกรรม: ประสบการณ์และอื่นๆ</p>
+            </div>
+        </section>
+
+    </div>
+    
+    <!-- =========================================
+         JavaScript (ระบบควบคุมทั้งหมด)
+    ========================================= -->
+    <script>
+        const bgmPlayer = document.getElementById('bgm-player');
+        const soundBtn = document.getElementById('sound-toggle-btn');
+        const soundIcon = document.getElementById('sound-icon');
+        const soundText = document.getElementById('sound-text');
+        
+        const iconOff = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`;
+        const iconOn = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+        
+        let isPlaying = false, fadeInterval;
+
+        function toggleSound(play) {
+            clearInterval(fadeInterval);
+            if (play) {
+                bgmPlayer.volume = 0; 
+                bgmPlayer.play().then(() => {
+                    fadeInterval = setInterval(() => { bgmPlayer.volume < 0.95 ? bgmPlayer.volume += 0.05 : (bgmPlayer.volume = 1, clearInterval(fadeInterval)); }, 50);
+                }).catch(e => {
+                    alert("[ERR: 415] AUDIO UNAVAILABLE");
+                    isPlaying = false; soundIcon.innerHTML = iconOff; soundText.innerHTML = '音声：オフ (Sound: OFF)';
+                });
+            } else {
+                fadeInterval = setInterval(() => { bgmPlayer.volume > 0.05 ? bgmPlayer.volume -= 0.05 : (bgmPlayer.volume = 0, bgmPlayer.pause(), clearInterval(fadeInterval)); }, 50);
+            }
+        }
+
+        soundBtn.addEventListener('click', (e) => {
+            e.preventDefault(); isPlaying = !isPlaying; toggleSound(isPlaying);
+            soundIcon.innerHTML = isPlaying ? iconOn : iconOff;
+            soundText.innerHTML = isPlaying ? '音声：オン (Sound: ON)' : '音声：オフ (Sound: OFF)';
+        });
+
+        // ฟังก์ชันเอฟเฟกต์พิมพ์ดีด (Typewriter)
+        function typeText(id, text, speed) {
+            const el = document.getElementById(id);
+            el.innerText = ''; el.style.opacity = '1'; 
+            let i = 0;
+            let timer = setInterval(() => {
+                if (i < text.length) { el.innerText += text.charAt(i); i++; } 
+                else { clearInterval(timer); }
+            }, speed); 
+        }
+
+        document.getElementById('enter-btn').addEventListener('click', () => {
+            window.scrollTo(0, 0);
+            const d = new Date();
+            const timeStr = `${d.toLocaleTimeString('en-GB',{hour12:false})} ${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+            
+            document.getElementById('boot-content').style.display = 'none';
+            
+            setTimeout(() => {
+                document.getElementById('loading-ui').style.display = 'flex';
+                isPlaying = true; toggleSound(true);
+                soundIcon.innerHTML = iconOn; soundText.innerHTML = '音声：オン (Sound: ON)';
+                
+                let currentProgress = 0, steps = 0;
+                let counter = setInterval(() => {
+                    steps++; let baseProgress = Math.floor((steps / 100) * 100);
+                    if(Math.random() >= 0.2) currentProgress = Math.max(currentProgress, baseProgress + Math.floor(Math.random() * 6));
+                    currentProgress = Math.min(currentProgress, 100);
+                    
+                    document.getElementById('progress-bar').style.width = currentProgress + '%';
+                    document.getElementById('loading-text').innerText = currentProgress + '%';
+                    
+                    if(steps >= 100 || currentProgress >= 100) {
+                        document.getElementById('progress-bar').style.width = '100%'; document.getElementById('loading-text').innerText = '100%';
+                        clearInterval(counter);
+                    }
+                }, 25); 
+                setTimeout(() => {
+                    document.getElementById('loading-ui').classList.add('ui-flash');
+                    setTimeout(() => {
+                        document.getElementById('transition-screen').style.left = '0';
+                        setTimeout(() => {
+                            document.getElementById('boot-screen').style.display = 'none';
+                            document.getElementById('transition-screen').style.left = '100%';
+                            
+                            document.getElementById('bg-video').play();
+                            
+                            setTimeout(() => { document.getElementById('transition-screen').style.display = 'none'; }, 1250);
+                        }, 1250); 
+                    }, 150); 
+                }, 2500); 
+
+                setTimeout(() => { typeText('line1', timeStr, 15); }, 200);
+                setTimeout(() => { typeText('line2', "ACPI :PCI Root Bridge Initialized (state 0000 0f000f045610)", 10); }, 800);
+                setTimeout(() => { typeText('line3', "Subject :MTE-209 SEC3 A602", 15); }, 1500);
+                setTimeout(() => { typeText('line4', "Starting 1 thread(S)", 20); }, 2000);
+
+            }, 500); 
+        });
+
+        // --- ระบบ Scroll Spy ---
+        const sections = document.querySelectorAll('.content-section');
+        const menuLinks = document.querySelectorAll('.menu-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= (sectionTop - 300)) { current = section.getAttribute('id'); }
+            });
+
+            menuLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) { link.classList.add('active'); }
+            });
+        });
+    </script>
+</body>
+</html>
